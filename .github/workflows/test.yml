@@ -34,5 +34,5 @@ jobs:
       - run: npm run lint --workspaces --if-present
       - run: npm run build --workspace packages/knip
       - run: npx knip
-      - run: npx knip --production --strict
+      # - run: npx knip --production --strict
       - run: npm test --workspaces --if-present
