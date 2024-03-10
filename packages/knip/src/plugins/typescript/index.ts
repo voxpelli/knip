@@ -1,20 +1,19 @@
-import { compact } from '../../util/array.js';
-import { dirname, isInternal, toAbsolute } from '../../util/path.js';
-import { timerify } from '../../util/Performance.js';
-import { hasDependency, loadJSON } from '../../util/plugin.js';
-import { loadTSConfig } from '../../util/tsconfig-loader.js';
-import type { IsPluginEnabledCallback, GenericPluginCallback } from '../../types/plugins.js';
+import { compact } from '#p/util/array.js';
+import { dirname, isInternal, toAbsolute } from '#p/util/path.js';
+import { hasDependency, loadJSON } from '#p/util/plugin.js';
+import { loadTSConfig } from '#p/util/tsconfig-loader.js';
+import type { IsPluginEnabled, ResolveFromPath } from '#p/types/plugins.js';
 import type { TsConfigJson } from 'type-fest';
 
 // https://www.typescriptlang.org/tsconfig
 
-const NAME = 'TypeScript';
+const title = 'TypeScript';
 
-const ENABLERS = ['typescript'];
+const enablers = ['typescript'];
 
-const isEnabled: IsPluginEnabledCallback = ({ dependencies }) => hasDependency(dependencies, ENABLERS);
+const isEnabled: IsPluginEnabled = ({ dependencies }) => hasDependency(dependencies, enablers);
 
-const CONFIG_FILE_PATTERNS = ['tsconfig.json', 'tsconfig.*.json'];
+const config = ['tsconfig.json', 'tsconfig.*.json'];
 
 const resolveExtensibleConfig = async (configFilePath: string) => {
   const filePath = configFilePath.replace(/(\.json)?$/, '.json');
@@ -35,7 +34,7 @@ const resolveExtensibleConfig = async (configFilePath: string) => {
   return localConfig;
 };
 
-export const findTypeScriptDependencies: GenericPluginCallback = async (configFilePath, options) => {
+export const resolveFromPath: ResolveFromPath = async (configFilePath, options) => {
   const { isProduction } = options;
 
   const { compilerOptions } = await loadTSConfig(configFilePath);
@@ -57,12 +56,10 @@ export const findTypeScriptDependencies: GenericPluginCallback = async (configFi
   return compact([...extend, ...types, ...plugins, ...importHelpers, ...jsx]);
 };
 
-const findDependencies = timerify(findTypeScriptDependencies);
-
 export default {
-  NAME,
-  ENABLERS,
+  title,
+  enablers,
   isEnabled,
-  CONFIG_FILE_PATTERNS,
-  findDependencies,
+  config,
+  resolveFromPath,
 };

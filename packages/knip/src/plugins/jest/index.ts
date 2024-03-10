@@ -1,26 +1,21 @@
-import { basename, join, isInternal, toAbsolute, dirname } from '../../util/path.js';
-import { timerify } from '../../util/Performance.js';
-import { hasDependency, load } from '../../util/plugin.js';
-import { toEntryPattern } from '../../util/protocols.js';
+import { basename, join, isInternal, toAbsolute, dirname } from '#p/util/path.js';
+import { hasDependency, load } from '#p/util/plugin.js';
+import { toEntryPattern } from '#p/util/protocols.js';
+import type { IsPluginEnabled, ResolveFromPath, PluginOptions } from '#p/types/plugins.js';
 import type { JestConfig, JestInitialOptions } from './types.js';
-import type {
-  IsPluginEnabledCallback,
-  GenericPluginCallback,
-  GenericPluginCallbackOptions,
-} from '../../types/plugins.js';
 
 // https://jestjs.io/docs/configuration
 
-const NAME = 'Jest';
+const title = 'Jest';
 
-const ENABLERS = ['jest'];
+const enablers = ['jest'];
 
-const isEnabled: IsPluginEnabledCallback = ({ dependencies, manifest }) =>
-  hasDependency(dependencies, ENABLERS) || Boolean(manifest.name?.startsWith('jest-presets'));
+const isEnabled: IsPluginEnabled = ({ dependencies, manifest }) =>
+  hasDependency(dependencies, enablers) || Boolean(manifest.name?.startsWith('jest-presets'));
 
-const CONFIG_FILE_PATTERNS = ['jest.config.{js,ts,mjs,cjs,json}', 'package.json'];
+const config = ['jest.config.{js,ts,mjs,cjs,json}', 'package.json'];
 
-const ENTRY_FILE_PATTERNS = ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'];
+const entry = ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'];
 
 const resolveExtensibleConfig = async (configFilePath: string) => {
   const config = await load(configFilePath);
@@ -35,10 +30,10 @@ const resolveExtensibleConfig = async (configFilePath: string) => {
   return config;
 };
 
-const resolveDependencies = (config: JestInitialOptions, options: GenericPluginCallbackOptions): string[] => {
+const resolveDependencies = (config: JestInitialOptions, options: PluginOptions): string[] => {
   const { isProduction } = options;
 
-  const entryPatterns = (options.config?.entry ?? config.testMatch ?? ENTRY_FILE_PATTERNS).map(toEntryPattern);
+  const entryPatterns = (options.config?.entry ?? config.testMatch ?? entry).map(toEntryPattern);
 
   if (isProduction) return entryPatterns;
 
@@ -89,7 +84,7 @@ const resolveDependencies = (config: JestInitialOptions, options: GenericPluginC
   ];
 };
 
-const findJestDependencies: GenericPluginCallback = async (configFilePath, options) => {
+const resolveFromPath: ResolveFromPath = async (configFilePath, options) => {
   const { manifest, cwd } = options;
 
   let localConfig: JestConfig | undefined =
@@ -110,13 +105,11 @@ const findJestDependencies: GenericPluginCallback = async (configFilePath, optio
   return dependencies.map(replaceRootDir).map(dependency => dependency.replace(matchCwd, toEntryPattern('')));
 };
 
-const findDependencies = timerify(findJestDependencies);
-
 export default {
-  NAME,
-  ENABLERS,
+  title,
+  enablers,
   isEnabled,
-  CONFIG_FILE_PATTERNS,
-  ENTRY_FILE_PATTERNS,
-  findDependencies,
+  config,
+  entry,
+  resolveFromPath,
 };

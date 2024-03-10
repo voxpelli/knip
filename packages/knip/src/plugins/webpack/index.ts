@@ -1,23 +1,22 @@
-import { compact } from '../../util/array.js';
-import { isInternal, join, relative } from '../../util/path.js';
-import { timerify } from '../../util/Performance.js';
-import { hasDependency, load } from '../../util/plugin.js';
-import { toEntryPattern, toProductionEntryPattern } from '../../util/protocols.js';
+import { compact } from '#p/util/array.js';
+import { isInternal, join, relative } from '#p/util/path.js';
+import { hasDependency } from '#p/util/plugin.js';
+import { toEntryPattern, toProductionEntryPattern } from '#p/util/protocols.js';
 import { getDependenciesFromConfig } from '../babel/index.js';
+import type { IsPluginEnabled, ResolveConfig } from '#p/types/plugins.js';
 import type { WebpackConfig, Env, Argv } from './types.js';
-import type { IsPluginEnabledCallback, GenericPluginCallback } from '../../types/plugins.js';
 import type { BabelConfigObj } from '../babel/types.js';
 import type { RuleSetRule, RuleSetUseItem } from 'webpack';
 
 // https://webpack.js.org/configuration/
 
-const NAME = 'Webpack';
+const title = 'Webpack';
 
-const ENABLERS = ['webpack', 'webpack-cli'];
+const enablers = ['webpack', 'webpack-cli'];
 
-const isEnabled: IsPluginEnabledCallback = ({ dependencies }) => hasDependency(dependencies, ENABLERS);
+const isEnabled: IsPluginEnabled = ({ dependencies }) => hasDependency(dependencies, enablers);
 
-const CONFIG_FILE_PATTERNS = ['webpack.config*.{js,ts,mjs,cjs,mts,cts}'];
+const config = ['webpack.config*.{js,ts,mjs,cjs,mts,cts}'];
 
 const hasBabelOptions = (use: RuleSetUseItem) =>
   Boolean(use) &&
@@ -99,12 +98,8 @@ export const findWebpackDependenciesFromConfig = async ({ config, cwd }: { confi
   return { dependencies, entryPatterns };
 };
 
-const findWebpackDependencies: GenericPluginCallback = async (configFilePath, options) => {
+const resolveConfig: ResolveConfig<WebpackConfig> = async (localConfig, options) => {
   const { manifest, isProduction, cwd } = options;
-
-  const localConfig: WebpackConfig | undefined = await load(configFilePath);
-
-  if (!localConfig) return [];
 
   const { dependencies, entryPatterns } = await findWebpackDependenciesFromConfig({ config: localConfig, cwd });
 
@@ -117,12 +112,10 @@ const findWebpackDependencies: GenericPluginCallback = async (configFilePath, op
   return compact([...entryPatterns, ...dependencies, ...webpackCLI, ...webpackDevServer]);
 };
 
-const findDependencies = timerify(findWebpackDependencies);
-
 export default {
-  NAME,
-  ENABLERS,
+  title,
+  enablers,
   isEnabled,
-  CONFIG_FILE_PATTERNS,
-  findDependencies,
+  config,
+  resolveConfig,
 };

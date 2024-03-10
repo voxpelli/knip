@@ -1,25 +1,24 @@
+import { getGitHookPaths } from '#p/util/git.js';
+import { getDependenciesFromScripts, hasDependency, loadFile } from '#p/util/plugin.js';
 import semver from 'semver';
-import { getGitHookPaths } from '../../util/git.js';
-import { timerify } from '../../util/Performance.js';
-import { getDependenciesFromScripts, hasDependency, loadFile } from '../../util/plugin.js';
-import type { IsPluginEnabledCallback, GenericPluginCallback } from '../../types/plugins.js';
+import type { IsPluginEnabled, ResolveFromPath } from '#p/types/plugins.js';
 
 // https://typicode.github.io/husky
 
-const NAME = 'husky';
+const title = 'husky';
 
-const ENABLERS = ['husky'];
+const enablers = ['husky'];
 
-const isEnabled: IsPluginEnabledCallback = ({ dependencies }) => hasDependency(dependencies, ENABLERS);
+const isEnabled: IsPluginEnabled = ({ dependencies }) => hasDependency(dependencies, enablers);
 
 const gitHooksPathInV8 = getGitHookPaths('.husky', true);
 // husky v9 registers hooks in .husky/_/ to git and calls user defined hooks in .husky/ from there
 const gitHookPathsInV9 = getGitHookPaths('.husky', false);
 
 // Add patterns for both v8 and v9 because we can't know which version is installed at this point
-const CONFIG_FILE_PATTERNS = [...gitHooksPathInV8, ...gitHookPathsInV9];
+const config = [...gitHooksPathInV8, ...gitHookPathsInV9];
 
-const findHuskyDependencies: GenericPluginCallback = async (configFilePath, options) => {
+const resolveFromPath: ResolveFromPath = async (configFilePath, options) => {
   const { isProduction, manifest } = options;
 
   if (isProduction) return [];
@@ -48,12 +47,10 @@ const findHuskyDependencies: GenericPluginCallback = async (configFilePath, opti
   return getDependenciesFromScripts(String(script), { ...options, knownGlobalsOnly: true });
 };
 
-const findDependencies = timerify(findHuskyDependencies);
-
 export default {
-  NAME,
-  ENABLERS,
+  title,
+  enablers,
   isEnabled,
-  CONFIG_FILE_PATTERNS,
-  findDependencies,
+  config,
+  resolveFromPath,
 };

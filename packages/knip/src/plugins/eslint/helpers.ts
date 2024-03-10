@@ -1,13 +1,13 @@
-import { compact } from '../../util/array.js';
-import { getPackageNameFromFilePath, getPackageNameFromModuleSpecifier } from '../../util/modules.js';
-import { basename, isInternal, dirname, toAbsolute, isAbsolute } from '../../util/path.js';
-import { load } from '../../util/plugin.js';
-import { _resolve } from '../../util/require.js';
+import { compact } from '#p/util/array.js';
+import { getPackageNameFromFilePath, getPackageNameFromModuleSpecifier } from '#p/util/modules.js';
+import { basename, isInternal, dirname, toAbsolute, isAbsolute } from '#p/util/path.js';
+import { load } from '#p/util/plugin.js';
+import { _resolve } from '#p/util/require.js';
 import { getDependenciesFromConfig } from '../babel/index.js';
 import { fallback } from './fallback.js';
-import { PACKAGE_JSON_PATH } from './index.js';
+import { packageJsonPath } from './index.js';
+import type { PackageJson } from '#p/types/package-json.js';
 import type { ESLintConfig, OverrideConfig } from './types.js';
-import type { PackageJson } from '../../types/package-json.js';
 
 const getDependencies = (config: ESLintConfig | OverrideConfig) => {
   const extendsSpecifiers = config.extends ? [config.extends].flat().map(resolveExtendSpecifier) : [];
@@ -37,7 +37,7 @@ export const getDependenciesDeep: GetDependenciesDeep = async (configFilePath, o
 
   const localConfig: ESLintConfig | undefined =
     basename(configFilePath) === 'package.json'
-      ? options.manifest[PACKAGE_JSON_PATH]
+      ? options.manifest[packageJsonPath]
       : /(\.(jsonc?|ya?ml)|rc)$/.test(configFilePath)
         ? await load(configFilePath)
         : await fallback(configFilePath);

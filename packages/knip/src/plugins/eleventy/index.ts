@@ -1,39 +1,28 @@
+import { isDirectory } from '#p/util/fs.js';
+import { isInNodeModules, join } from '#p/util/path.js';
+import { hasDependency } from '#p/util/plugin.js';
+import { toProductionEntryPattern } from '#p/util/protocols.js';
 import { DEFAULT_EXTENSIONS } from '../../constants.js';
-import { isDirectory } from '../../util/fs.js';
-import { dirname, isInNodeModules, join } from '../../util/path.js';
-import { timerify } from '../../util/Performance.js';
-import { hasDependency, load } from '../../util/plugin.js';
-import { toProductionEntryPattern } from '../../util/protocols.js';
 import { DummyEleventyConfig, defaultEleventyConfig } from './helpers.js';
+import type { IsPluginEnabled, ResolveConfig } from '#p/types/plugins.js';
 import type { EleventyConfig } from './types.js';
-import type { IsPluginEnabledCallback, GenericPluginCallback } from '../../types/plugins.js';
 
 // https://www.11ty.dev/docs/
 
-const NAME = 'Eleventy';
+const title = 'Eleventy';
 
-const ENABLERS = ['@11ty/eleventy'];
+const enablers = ['@11ty/eleventy'];
 
-const isEnabled: IsPluginEnabledCallback = ({ dependencies }) => hasDependency(dependencies, ENABLERS);
+const isEnabled: IsPluginEnabled = ({ dependencies }) => hasDependency(dependencies, enablers);
 
-const CONFIG_FILE_PATTERNS: string[] = ['.eleventy.js', 'eleventy.config.{js,cjs,mjs}'];
+const config = ['.eleventy.js', 'eleventy.config.{js,cjs,mjs}'];
 
-const ENTRY_FILE_PATTERNS: string[] = [];
+const production = ['posts/**/*.11tydata.js', '_data/**/*.{js,cjs,mjs}'];
 
-const PRODUCTION_ENTRY_FILE_PATTERNS: string[] = ['posts/**/*.11tydata.js', '_data/**/*.{js,cjs,mjs}'];
+type T = Partial<EleventyConfig> | ((arg: DummyEleventyConfig) => Promise<Partial<EleventyConfig>>);
 
-const PROJECT_FILE_PATTERNS: string[] = [];
-
-const findEleventyDependencies: GenericPluginCallback = async (configFilePath, options) => {
-  const { config } = options;
-
-  let localConfig = (await load(configFilePath)) as
-    | Partial<EleventyConfig>
-    | ((arg: DummyEleventyConfig) => Promise<Partial<EleventyConfig>>);
-  if (!localConfig)
-    return config.entry
-      ? config.entry.map(toProductionEntryPattern)
-      : PRODUCTION_ENTRY_FILE_PATTERNS.map(toProductionEntryPattern);
+const resolveConfig: ResolveConfig<T> = async (localConfig, options) => {
+  const { config, configFileDir } = options;
 
   const dummyUserConfig = new DummyEleventyConfig();
   if (typeof localConfig === 'function') localConfig = await localConfig(dummyUserConfig);
@@ -47,7 +36,7 @@ const findEleventyDependencies: GenericPluginCallback = async (configFilePath, o
   const copiedEntries = new Set<string>();
 
   for (const path of Object.keys(dummyUserConfig.passthroughCopies)) {
-    const isDir = !path.includes('*') && isDirectory(join(dirname(configFilePath), path));
+    const isDir = !path.includes('*') && isDirectory(join(configFileDir, path));
     if (isDir) {
       copiedEntries.add(join(path, `**/*.{${exts}}`));
     } else if (isInNodeModules(path)) {
@@ -70,15 +59,11 @@ const findEleventyDependencies: GenericPluginCallback = async (configFilePath, o
   ];
 };
 
-const findDependencies = timerify(findEleventyDependencies);
-
 export default {
-  NAME,
-  ENABLERS,
+  title,
+  enablers,
   isEnabled,
-  CONFIG_FILE_PATTERNS,
-  ENTRY_FILE_PATTERNS,
-  PRODUCTION_ENTRY_FILE_PATTERNS,
-  PROJECT_FILE_PATTERNS,
-  findDependencies,
+  config,
+  production,
+  resolveConfig,
 };

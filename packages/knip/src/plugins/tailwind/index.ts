@@ -1,26 +1,26 @@
-import { hasDependency } from '../../util/plugin.js';
+import { hasDependency } from '#p/util/plugin.js';
 import { toEntryPattern } from '../../util/protocols.js';
-import type { GenericPluginCallback, IsPluginEnabledCallback } from '../../types/plugins.js';
+import type { IsPluginEnabled, ResolveConfig } from '#p/types/plugins.js';
 
 // https://tailwindcss.com/docs/configuration
 
-const NAME = 'Tailwind';
+const title = 'Tailwind';
 
-const ENABLERS = ['tailwindcss'];
+const enablers = ['tailwindcss'];
 
-const isEnabled: IsPluginEnabledCallback = ({ dependencies }) => hasDependency(dependencies, ENABLERS);
+const isEnabled: IsPluginEnabled = ({ dependencies }) => hasDependency(dependencies, enablers);
 
-const ENTRY_FILE_PATTERNS = ['tailwind.config.{js,cjs,mjs,ts}'];
+const entry = ['tailwind.config.{js,cjs,mjs,ts}'];
 
-const findDependencies: GenericPluginCallback = async (configFilePath, options) => {
+const findDependencies: ResolveConfig = async (configFilePath, options) => {
   const { config } = options;
-  return config.entry ? config.entry.map(toEntryPattern) : ENTRY_FILE_PATTERNS.map(toEntryPattern);
+  return config.entry ? config.entry.map(toEntryPattern) : entry.map(toEntryPattern);
 };
 
 export default {
-  NAME,
-  ENABLERS,
+  title,
+  enablers,
   isEnabled,
-  ENTRY_FILE_PATTERNS,
+  entry,
   findDependencies,
 };
