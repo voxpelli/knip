@@ -6,11 +6,7 @@ import { extname } from './path.js';
 import { timerify } from './Performance.js';
 import { jitiCJS, jitiESM } from './register.js';
 
-export const FAKE_PATH = '__FAKE__.json';
-
 const load = async (filePath: string) => {
-  // TODO: Turn into a config issue warning
-  if (filePath === FAKE_PATH) return;
   try {
     const ext = extname(filePath);
     if (filePath.endsWith('rc')) {
@@ -47,8 +43,6 @@ const load = async (filePath: string) => {
 };
 
 const loadFileAsync = async (filePath: string) => {
-  // TODO: Turn into a config issue warning
-  if (filePath === FAKE_PATH) return;
   try {
     return await loadFile(filePath);
   } catch (error) {
